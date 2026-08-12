@@ -42,10 +42,26 @@ except ImportError:
 # PAGE CONFIG
 # ----------------------------------------------------------------------
 st.set_page_config(
-    page_title="StyleMate — Outfit Planner",
+    page_title="À La Mode — Outfit Planner",
     page_icon="👗",
     layout="wide",
 )
+
+# Light theming pass so the tool below the hero matches its warm palette
+st.markdown("""
+<style>
+  .stButton > button[kind="primary"] {
+      background-color: #B23A6B; border-color: #B23A6B;
+  }
+  .stButton > button[kind="primary"]:hover {
+      background-color: #9c2f5a; border-color: #9c2f5a;
+  }
+  .stTabs [aria-selected="true"] {
+      color: #B23A6B !important;
+      border-bottom-color: #B23A6B !important;
+  }
+</style>
+""", unsafe_allow_html=True)
 
 CATEGORIES = ["Top", "Bottom", "Dress", "Outerwear", "Shoes", "Bag", "Accessory"]
 
@@ -259,35 +275,35 @@ if "next_id" not in st.session_state:
 
 
 # ----------------------------------------------------------------------
-# SIDEBAR — PROFILE
-# ----------------------------------------------------------------------
-with st.sidebar:
-    st.header("👤 Your Profile")
-    st.caption("Used only to tailor fit & silhouette suggestions — never shared.")
-    gender = st.selectbox("Gender", ["Prefer not to say", "Woman", "Man", "Non-binary"])
-    height_cm = st.number_input("Height (cm)", min_value=0, max_value=230, value=0, step=1,
-                                 help="Leave at 0 to skip.")
-    weight_kg = st.number_input("Weight (kg) — optional", min_value=0, max_value=250, value=0, step=1,
-                                 help="Only used if you'd like size/fit hints; leave at 0 to skip.")
-    body_shape = st.selectbox("Body shape (optional)", BODY_SHAPES)
-    style_prefs = st.multiselect("Style you gravitate toward", STYLE_TAGS, default=["Minimalist"])
-
-    st.divider()
-    st.header("📡 Trend Source")
-    live = st.toggle("Pull live headlines from fashion sites", value=True,
-                      help="Requires internet access. Uses public RSS feeds from Vogue, Elle, Harper's Bazaar, WWD.")
-    if not FEEDPARSER_AVAILABLE:
-        st.caption("⚠️ `feedparser` not installed — run `pip install feedparser` to enable live feeds.")
-
-
-# ----------------------------------------------------------------------
 # MAIN — HERO BANNER (your Canva design, rendered as a self-contained
 # HTML component) followed by the actual working tool below it
 # ----------------------------------------------------------------------
-components.html(HERO_HTML, height=2050, scrolling=False)
+components.html(HERO_HTML, height=2350, scrolling=False)
 
 st.header("👗 Your Closet Tool")
 st.write("Upload photos of your clothes, bags, and shoes, and get outfit combinations built around current trends and your own style.")
+
+# ----------------------------------------------------------------------
+# PROFILE — moved out of the sidebar and into the main page, in a
+# collapsible panel so it doesn't compete with the tool itself
+# ----------------------------------------------------------------------
+with st.expander("👤 Your Profile & Preferences", expanded=True):
+    st.caption("Used only to tailor fit & silhouette suggestions — never shared.")
+    p_col1, p_col2, p_col3 = st.columns(3)
+    with p_col1:
+        gender = st.selectbox("Gender", ["Prefer not to say", "Woman", "Man", "Non-binary"])
+        height_cm = st.number_input("Height (cm)", min_value=0, max_value=230, value=0, step=1,
+                                     help="Leave at 0 to skip.")
+    with p_col2:
+        weight_kg = st.number_input("Weight (kg) — optional", min_value=0, max_value=250, value=0, step=1,
+                                     help="Only used if you'd like size/fit hints; leave at 0 to skip.")
+        body_shape = st.selectbox("Body shape (optional)", BODY_SHAPES)
+    with p_col3:
+        style_prefs = st.multiselect("Style you gravitate toward", STYLE_TAGS, default=["Minimalist"])
+        live = st.toggle("Pull live headlines from fashion sites", value=True,
+                          help="Requires internet access. Uses public RSS feeds from Vogue, Elle, Harper's Bazaar, WWD.")
+        if not FEEDPARSER_AVAILABLE:
+            st.caption("⚠️ `feedparser` not installed — run `pip install feedparser` to enable live feeds.")
 
 tab_upload, tab_trends, tab_outfits, tab_tips = st.tabs(
     ["📤 Upload Wardrobe", "📰 Current Trends", "✨ Generated Outfits", "📏 Fit & Style Tips"]

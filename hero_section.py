@@ -2,139 +2,178 @@
 hero_section.py
 ================
 Your Canva design, converted into a plain HTML/CSS string with no external
-JS dependencies (no Tailwind CDN, no Lucide script) so it renders reliably
-inside Streamlit's sandboxed `components.html` iframe.
+JS dependencies, so it renders reliably inside Streamlit's sandboxed
+`components.html` iframe. See the notes at the bottom of app.py for why
+this approach (rather than pasting the raw Canva export) is used.
 
-Why not just embed the original Canva export?
-  - Its content comes from Canva's own /_sdk/ scripts, which only resolve
-    on Canva's servers — inside Streamlit's iframe they'd 404 and the
-    section would render blank.
-  - Scripts injected via Streamlit's `st.markdown(..., unsafe_allow_html=True)`
-    don't execute (browsers don't run <script> tags inserted that way), so
-    the Tailwind CDN build step wouldn't run either. That's why every
-    Tailwind utility class below has been converted into real, static CSS.
-
-Why an iframe (`components.html`) instead of `st.markdown`?
-  - `st.markdown` strips <style>/<script> in ways that break a design this
-    size. `components.html` renders the whole thing in its own sandboxed
-    document, so the layout, fonts, and gradients all render exactly as
-    designed.
-  - Trade-off: because it's a separate document, its internal links
-    (#closet, #sources) only scroll within the banner itself — they can't
-    jump to the Streamlit widgets below it. That's why the CTA buttons
-    here scroll down to a marker at the bottom of the banner instead,
-    with a prompt to keep scrolling into the app below.
+v2 changes:
+  - Front page (hero) is now just the site name over a full-bleed photo,
+    with a one-line description underneath — nothing else competes for
+    attention up top.
+  - Warmer, livelier color palette (berry / coral / gold) instead of the
+    dark green + tan combination.
+  - Full source list (magazines + luxury retailers + brands to study),
+    filterable, styled as elegant wordmark cards rather than photographs.
+    Real brand photography/logos aren't included here on purpose — most
+    of it is copyrighted or trademarked, and embedding it on a public
+    site without a license is a real legal risk. These wordmark cards are
+    a placeholder you can swap for licensed brand imagery later if you
+    get permission, or for your own product photography.
+  - More breathing room, larger type, hover states, mobile breakpoints.
 """
 
-HERO_HTML = """
+HEADER_PHOTO_URL = "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?fm=jpg&q=80&w=2000&auto=format&fit=crop"
+# Photo by Thom Bradley on Unsplash — free to use under the Unsplash License (unsplash.com/license).
+
+SOURCES = [
+    # (name, category)  category: "magazine" | "retailer" | "brand"
+    ("Vogue", "magazine"), ("Harper's Bazaar", "magazine"), ("Elle", "magazine"),
+    ("L'Officiel", "magazine"), ("Numéro", "magazine"), ("Marie Claire", "magazine"),
+    ("Porter Magazine", "magazine"), ("The Gentlewoman", "magazine"),
+    ("Net-a-Porter", "retailer"), ("Mytheresa", "retailer"), ("Moda Operandi", "retailer"),
+    ("Farfetch", "retailer"), ("SSENSE", "retailer"), ("Bergdorf Goodman", "retailer"),
+    ("Ralph Lauren", "brand"), ("The Row", "brand"), ("Brunello Cucinelli", "brand"),
+    ("Max Mara", "brand"), ("Loro Piana", "brand"), ("Totême", "brand"),
+    ("Khaite", "brand"), ("Jil Sander", "brand"), ("Hermès", "brand"), ("Ferragamo", "brand"),
+]
+
+_PALETTE = ["#B23A6B", "#E8B54D", "#FF7A59", "#7A3B69"]  # rotates per card
+
+def _source_cards():
+    cards = []
+    for i, (name, cat) in enumerate(SOURCES):
+        color = _PALETTE[i % len(_PALETTE)]
+        cat_label = {"magazine": "Magazine", "retailer": "Retailer", "brand": "Brand"}[cat]
+        cards.append(f"""
+        <div class="source-card" data-cat="{cat}" style="background:linear-gradient(135deg,{color}22,{color}0a);border-color:{color}33;">
+          <span class="tag" style="background:{color}20;color:{color};">{cat_label}</span>
+          <h3 class="editorial" style="color:{color};">{name}</h3>
+        </div>""")
+    return "\n".join(cards)
+
+
+HERO_HTML = f"""
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <style>
-  * { box-sizing: border-box; }
-  body {
+  * {{ box-sizing: border-box; }}
+  :root {{
+    --ink: #2E1A22;
+    --primary: #B23A6B;
+    --accent: #FF7A59;
+    --gold: #E8B54D;
+    --blush: #FBE4E8;
+    --cream: #FDF6F0;
+  }}
+  body {{
     margin: 0; font-family: -apple-system, "DM Sans", "Segoe UI", sans-serif;
-    color: #292420; background: #faf7f2;
-  }
-  .editorial { font-family: Georgia, "Playfair Display", serif; }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-  a { text-decoration: none; color: inherit; }
+    color: var(--ink); background: var(--cream);
+  }}
+  .editorial {{ font-family: Georgia, "Playfair Display", serif; }}
+  .wrap {{ max-width: 1120px; margin: 0 auto; padding: 0 24px; }}
+  a {{ text-decoration: none; color: inherit; }}
 
-  header.nav { padding: 20px 0; }
-  header.nav .row { display: flex; align-items: center; justify-content: space-between; }
-  .brand { font-size: 1.4rem; font-weight: 700; }
-  .cta-btn {
-    background: #26352d; color: #fff; border-radius: 999px; padding: 10px 22px;
-    font-weight: 700; font-size: .9rem; border: none; cursor: pointer; display: inline-block;
-  }
+  /* ---------- FRONT PAGE ---------- */
+  .front {{
+    position: relative; min-height: 560px; display: flex; align-items: center;
+    justify-content: center; text-align: center; overflow: hidden;
+    background-image: linear-gradient(180deg, rgba(46,26,34,.55), rgba(178,58,107,.55)),
+                       url('{HEADER_PHOTO_URL}');
+    background-size: cover; background-position: center;
+  }}
+  .front .inner {{ position: relative; z-index: 2; padding: 40px 24px; }}
+  .site-name {{
+    font-size: 5rem; line-height: 1; color: #fff; margin: 0 0 22px; font-weight: 700;
+    letter-spacing: .01em; text-shadow: 0 4px 30px rgba(0,0,0,.25);
+  }}
+  .front p.desc {{
+    font-size: 1.2rem; color: #fff; max-width: 560px; margin: 0 auto 30px;
+    line-height: 1.65; opacity: .95;
+  }}
+  .front .scroll-cue {{ color: #fff; font-size: .85rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }}
+  .bounce {{ display: inline-block; animation: bounce 1.5s infinite; }}
+  @keyframes bounce {{ 0%,100%{{transform:translateY(0);}} 50%{{transform:translateY(7px);}} }}
 
-  .hero {
-    background: radial-gradient(circle at 72% 32%, rgba(217,95,69,.28), transparent 55%),
-                radial-gradient(circle at 18% 88%, rgba(224,184,111,.28), transparent 55%);
-    padding: 50px 0 70px;
-  }
-  .hero .grid { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; }
-  .hero .col { flex: 1 1 420px; }
-  .tag {
-    display: inline-block; background: #eee6d8; color: #6b5a3a; border-radius: 999px;
-    padding: 5px 14px; font-size: .72rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .08em; margin-bottom: 18px;
-  }
-  h1.headline { font-size: 2.8rem; line-height: 1.05; margin: 0 0 20px; font-weight: 600; }
-  .hero p.lead { font-size: 1.1rem; line-height: 1.7; margin: 0 0 26px; max-width: 480px; }
-  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; }
-  .btn-outline {
-    border: 1.5px solid #26352d; border-radius: 999px; padding: 10px 22px;
-    font-weight: 700; font-size: .9rem; display: inline-block; cursor: pointer;
-  }
-  .placeholder {
-    background: linear-gradient(135deg,#e7ded0,#c9b593); border-radius: 28px;
-    display: flex; align-items: center; justify-content: center; color: #6b5a3a;
-    font-size: .85rem; text-align: center; padding: 20px; min-height: 320px;
-  }
+  /* ---------- SECTIONS ---------- */
+  section.block {{ padding: 64px 0; }}
+  .block-head {{ max-width: 640px; margin: 0 auto 36px; text-align: center; }}
+  .tag {{
+    display: inline-block; background: var(--blush); color: var(--primary); border-radius: 999px;
+    padding: 6px 16px; font-size: .75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; margin-bottom: 16px;
+  }}
+  h2.title {{ font-size: 2.3rem; margin: 6px 0 14px; font-weight: 700; }}
+  .block-head p {{ font-size: 1.05rem; line-height: 1.65; }}
 
-  section.block { padding: 60px 0; }
-  .block-head { max-width: 620px; margin-bottom: 34px; }
-  h2.title { font-size: 2.2rem; margin: 6px 0 12px; font-weight: 600; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
-  .card {
-    background: #fff; border: 1px solid #ece5da; border-radius: 26px; overflow: hidden;
-  }
-  .card .img { height: 170px; }
-  .card .body { padding: 22px; }
-  .icon-badge {
-    display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
-    border-radius: 999px; color: #fff; font-size: 1.1rem; margin-bottom: 14px;
-  }
-  .card h3 { font-size: 1.35rem; margin: 0 0 8px; font-weight: 600; }
-  .card p { margin: 0; line-height: 1.6; font-size: .95rem; }
+  .cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 24px; }}
+  .card {{ background: #fff; border: 1px solid #f0e2e7; border-radius: 26px; overflow: hidden; box-shadow: 0 8px 24px rgba(178,58,107,.06); }}
+  .card .img {{ height: 175px; }}
+  .card .body {{ padding: 26px; }}
+  .icon-badge {{
+    display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+    border-radius: 999px; color: #fff; font-size: 1.2rem; margin-bottom: 16px;
+  }}
+  .card h3 {{ font-size: 1.4rem; margin: 0 0 10px; font-weight: 700; }}
+  .card p {{ margin: 0; line-height: 1.65; font-size: .97rem; }}
 
-  .quote-card { background: linear-gradient(135deg,#d9b774,#8b5d43); color: #fff;
-    display: flex; align-items: flex-end; padding: 24px; min-height: 170px; font-size: 1.4rem;
-    font-weight: 600; line-height: 1.25; }
+  .quote-card {{ background: linear-gradient(135deg,var(--gold),var(--accent)); color: #fff;
+    display: flex; align-items: flex-end; padding: 26px; min-height: 175px; font-size: 1.45rem;
+    font-weight: 700; line-height: 1.25; }}
 
-  .sources-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
-  .source-card { background: #fff; border: 1px solid #ece5da; border-radius: 20px; padding: 22px; transition: transform .2s ease; }
-  .source-card:hover { transform: translateY(-4px); }
-  .source-card h3 { font-size: 1.5rem; margin: 10px 0; font-weight: 600; }
-  .source-card p { font-size: .9rem; line-height: 1.55; margin: 0 0 14px; }
-  .visit { font-weight: 700; font-size: .85rem; }
+  .placeholder {{
+    background: linear-gradient(135deg,var(--blush),#f3cfd8); display: flex; align-items: center;
+    justify-content: center; color: var(--primary); font-size: .85rem; text-align: center; padding: 16px;
+  }}
 
-  .closing { background: #26352d; color: #fff; border-radius: 28px; text-align: center;
-    padding: 60px 30px; margin: 20px auto; }
-  .closing h2 { color: #fff; }
-  .closing p { color: rgba(255,255,255,.8); max-width: 480px; margin: 0 auto 24px; }
-  .btn-white { background: #fff; color: #292420; border-radius: 999px; padding: 12px 26px;
-    font-weight: 700; display: inline-block; }
+  /* ---------- SOURCES ---------- */
+  .filters {{ display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; }}
+  .filter-btn {{
+    border: 1.5px solid var(--primary); color: var(--primary); background: #fff; border-radius: 999px;
+    padding: 9px 20px; font-weight: 700; font-size: .88rem; cursor: pointer;
+  }}
+  .filter-btn.active {{ background: var(--primary); color: #fff; }}
+  .sources-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }}
+  .source-card {{
+    border: 1.5px solid; border-radius: 20px; padding: 22px 18px; text-align: center;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }}
+  .source-card:hover {{ transform: translateY(-4px); box-shadow: 0 10px 26px rgba(46,26,34,.1); }}
+  .source-card h3 {{ font-size: 1.25rem; margin: 4px 0 0; font-weight: 700; }}
 
-  .scroll-note { text-align: center; padding: 30px 0 50px; }
-  .scroll-note p { font-weight: 700; font-size: 1rem; }
-  .bounce { animation: bounce 1.4s infinite; display: inline-block; }
-  @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(6px);} }
+  /* ---------- CLOSING ---------- */
+  .closing {{
+    background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border-radius: 30px;
+    text-align: center; padding: 64px 30px; margin: 10px auto 0;
+  }}
+  .closing h2 {{ color: #fff; }}
+  .closing p {{ color: rgba(255,255,255,.9); max-width: 500px; margin: 0 auto 26px; font-size: 1.05rem; }}
+  .btn-white {{
+    background: #fff; color: var(--primary); border-radius: 999px; padding: 13px 28px;
+    font-weight: 700; display: inline-block; font-size: 1rem;
+  }}
+  .btn-white:hover {{ opacity: .92; }}
+
+  .scroll-note {{ text-align: center; padding: 40px 0 56px; }}
+  .scroll-note p {{ font-weight: 700; font-size: 1.05rem; color: var(--primary); }}
+
+  @media (max-width: 640px) {{
+    .site-name {{ font-size: 3rem; }}
+    .front {{ min-height: 440px; }}
+    h2.title {{ font-size: 1.8rem; }}
+  }}
 </style>
 </head>
 <body>
 
-<header class="nav"><div class="wrap row" style="display:flex;align-items:center;justify-content:space-between;">
-  <a href="#top" class="brand editorial">À La Mode</a>
-  <a href="#scroll-target" class="cta-btn">Open the app ↓</a>
-</div></header>
-
-<section class="hero" id="top"><div class="wrap grid">
-  <div class="col">
-    <span class="tag">Your wardrobe, reimagined</span>
-    <h1 class="headline editorial">Style yourself with what you already own.</h1>
-    <p class="lead">Upload photos of your clothes, bags, and shoes. À La Mode pairs them into outfits built around current trends and the way you like to dress.</p>
-    <div class="btn-row">
-      <a href="#scroll-target" class="cta-btn">✨ Style my closet</a>
-      <a href="#sources" class="btn-outline">See what inspires it</a>
-    </div>
+<section class="front" id="top">
+  <div class="inner">
+    <h1 class="site-name editorial">À La Mode</h1>
+    <p class="desc">Your closet, styled. Upload photos of what you already own and get outfit combinations built around current trends and your own taste.</p>
+    <a href="#scroll-target" class="scroll-cue">Scroll to begin <span class="bounce">⬇</span></a>
   </div>
-  <div class="col">
-    <div class="placeholder">Replace with your own hero photo<br>(e.g. a styled flat-lay)</div>
-  </div>
-</div></section>
+</section>
 
 <section class="block" id="closet"><div class="wrap">
   <div class="block-head">
@@ -144,39 +183,34 @@ HERO_HTML = """
   </div>
   <div class="cards">
     <div class="card"><div class="img placeholder" style="border-radius:0;">Closet photo</div>
-      <div class="body"><div class="icon-badge" style="background:#26352d;">👕</div>
+      <div class="body"><div class="icon-badge" style="background:var(--primary);">👕</div>
         <h3 class="editorial">Upload your pieces</h3>
         <p>Snap photos of tops, bottoms, shoes, and bags. We tag the category and pull the dominant color automatically.</p></div></div>
     <div class="card"><div class="img placeholder" style="border-radius:0;">Outfit photo</div>
-      <div class="body"><div class="icon-badge" style="background:#cf6542;">✨</div>
+      <div class="body"><div class="icon-badge" style="background:var(--accent);">✨</div>
         <h3 class="editorial">Get outfit combinations</h3>
         <p>We match pieces by color harmony and today's trends, then hand you a shortlist of full outfits.</p></div></div>
     <div class="card"><div class="quote-card editorial">"I stopped buying clothes I already own."</div>
-      <div class="body"><div class="icon-badge" style="background:#875b45;">♥</div>
+      <div class="body"><div class="icon-badge" style="background:var(--gold);">♥</div>
         <h3 class="editorial">Dress with confidence</h3>
         <p>Add your height, body shape, and taste for fit tips that actually fit you, not a generic size chart.</p></div></div>
   </div>
 </div></section>
 
-<section class="block" id="sources"><div class="wrap">
+<section class="block" id="sources" style="background:#fff;"><div class="wrap">
   <div class="block-head">
     <span class="tag">Where the trends come from</span>
     <h2 class="title editorial">Our fashion sources</h2>
-    <p>Editorial voices we track for silhouette, color, and trend direction.</p>
+    <p>The magazines, retailers, and houses we track for silhouette, color, and trend direction.</p>
   </div>
-  <div class="sources-grid">
-    <a class="source-card" href="https://www.vogue.com/" target="_blank" rel="noopener noreferrer">
-      <span class="tag">Magazine</span><h3 class="editorial">Vogue</h3>
-      <p>Runway collections and editorials from the industry's benchmark title.</p>
-      <span class="visit">Visit →</span></a>
-    <a class="source-card" href="https://www.elle.com/fashion/" target="_blank" rel="noopener noreferrer">
-      <span class="tag">Magazine</span><h3 class="editorial">Elle</h3>
-      <p>Modern, wearable takes on the trends moving down the runway.</p>
-      <span class="visit">Visit →</span></a>
-    <a class="source-card" href="https://www.harpersbazaar.com/fashion/" target="_blank" rel="noopener noreferrer">
-      <span class="tag">Magazine</span><h3 class="editorial">Harper's Bazaar</h3>
-      <p>Sophisticated styling and a long editorial eye on womenswear.</p>
-      <span class="visit">Visit →</span></a>
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all" onclick="filterSources('all', this)">All</button>
+    <button class="filter-btn" data-filter="magazine" onclick="filterSources('magazine', this)">Magazines</button>
+    <button class="filter-btn" data-filter="retailer" onclick="filterSources('retailer', this)">Retailers</button>
+    <button class="filter-btn" data-filter="brand" onclick="filterSources('brand', this)">Brands</button>
+  </div>
+  <div class="sources-grid" id="sources-grid">
+    {_source_cards()}
   </div>
 </div></section>
 
@@ -192,6 +226,16 @@ HERO_HTML = """
   <span class="bounce">⬇</span>
   <p>Your closet tool is right below — keep scrolling on the page.</p>
 </div>
+
+<script>
+  function filterSources(cat, btn) {{
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#sources-grid .source-card').forEach(card => {{
+      card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
+    }});
+  }}
+</script>
 
 </body>
 </html>
