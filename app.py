@@ -26,7 +26,10 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Tuple
 
 import streamlit as st
+import streamlit.components.v1 as components
 from PIL import Image
+
+from hero_section import HERO_HTML
 
 try:
     import feedparser
@@ -278,9 +281,12 @@ with st.sidebar:
 
 
 # ----------------------------------------------------------------------
-# MAIN — HEADER
+# MAIN — HERO BANNER (your Canva design, rendered as a self-contained
+# HTML component) followed by the actual working tool below it
 # ----------------------------------------------------------------------
-st.title("👗 StyleMate")
+components.html(HERO_HTML, height=2050, scrolling=False)
+
+st.header("👗 Your Closet Tool")
 st.write("Upload photos of your clothes, bags, and shoes, and get outfit combinations built around current trends and your own style.")
 
 tab_upload, tab_trends, tab_outfits, tab_tips = st.tabs(
