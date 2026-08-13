@@ -47,18 +47,18 @@ st.set_page_config(
     layout="wide",
 )
 
-# Light theming pass so the tool below the hero matches its warm palette
+# Light theming pass so the tool below the hero matches the Apple-style palette
 st.markdown("""
 <style>
   .stButton > button[kind="primary"] {
-      background-color: #B23A6B; border-color: #B23A6B;
+      background-color: #1d1d1f; border-color: #1d1d1f;
   }
   .stButton > button[kind="primary"]:hover {
-      background-color: #9c2f5a; border-color: #9c2f5a;
+      background-color: #000; border-color: #000;
   }
   .stTabs [aria-selected="true"] {
-      color: #B23A6B !important;
-      border-bottom-color: #B23A6B !important;
+      color: #A23B5C !important;
+      border-bottom-color: #A23B5C !important;
   }
 </style>
 """, unsafe_allow_html=True)
@@ -278,7 +278,7 @@ if "next_id" not in st.session_state:
 # MAIN — HERO BANNER (your Canva design, rendered as a self-contained
 # HTML component) followed by the actual working tool below it
 # ----------------------------------------------------------------------
-components.html(HERO_HTML, height=2350, scrolling=False)
+components.html(HERO_HTML, height=3050, scrolling=False)
 
 st.header("👗 Your Closet Tool")
 st.write("Upload photos of your clothes, bags, and shoes, and get outfit combinations built around current trends and your own style.")

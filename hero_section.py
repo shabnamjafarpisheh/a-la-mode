@@ -1,32 +1,25 @@
 """
 hero_section.py
 ================
-Your Canva design, converted into a plain HTML/CSS string with no external
-JS dependencies, so it renders reliably inside Streamlit's sandboxed
-`components.html` iframe. See the notes at the bottom of app.py for why
-this approach (rather than pasting the raw Canva export) is used.
+v3 — Apple.com-style design direction, applied to clothes instead of
+devices: huge tight-tracked headlines, generous whitespace, alternating
+white/black full-width sections, a big edge-to-edge photo under each
+headline instead of a product render, and a minimal monochrome sources
+grid (segmented-control style filters) instead of colored cards.
 
-v2 changes:
-  - Front page (hero) is now just the site name over a full-bleed photo,
-    with a one-line description underneath — nothing else competes for
-    attention up top.
-  - Warmer, livelier color palette (berry / coral / gold) instead of the
-    dark green + tan combination.
-  - Full source list (magazines + luxury retailers + brands to study),
-    filterable, styled as elegant wordmark cards rather than photographs.
-    Real brand photography/logos aren't included here on purpose — most
-    of it is copyrighted or trademarked, and embedding it on a public
-    site without a license is a real legal risk. These wordmark cards are
-    a placeholder you can swap for licensed brand imagery later if you
-    get permission, or for your own product photography.
-  - More breathing room, larger type, hover states, mobile breakpoints.
+Photos are real, freely-licensed Unsplash photos (Unsplash License —
+free for commercial use, no attribution required), swapped in for the
+device photography Apple would normally use:
+  - Thom Bradley: clothing racks
+  - Priscilla Du Preez: a coat on a rack, minimal/neutral
+  - Meg MacDonald: a stack of folded sweaters
 """
 
-HEADER_PHOTO_URL = "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?fm=jpg&q=80&w=2000&auto=format&fit=crop"
-# Photo by Thom Bradley on Unsplash — free to use under the Unsplash License (unsplash.com/license).
+PHOTO_RACKS = "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?fm=jpg&q=80&w=2400&auto=format&fit=crop"
+PHOTO_COAT = "https://images.unsplash.com/photo-1604882767135-b41fac508fff?fm=jpg&q=80&w=2400&auto=format&fit=crop"
+PHOTO_SWEATERS = "https://images.unsplash.com/photo-1646270968349-dafd9f758e93?fm=jpg&q=80&w=2400&auto=format&fit=crop"
 
 SOURCES = [
-    # (name, category)  category: "magazine" | "retailer" | "brand"
     ("Vogue", "magazine"), ("Harper's Bazaar", "magazine"), ("Elle", "magazine"),
     ("L'Officiel", "magazine"), ("Numéro", "magazine"), ("Marie Claire", "magazine"),
     ("Porter Magazine", "magazine"), ("The Gentlewoman", "magazine"),
@@ -37,19 +30,11 @@ SOURCES = [
     ("Khaite", "brand"), ("Jil Sander", "brand"), ("Hermès", "brand"), ("Ferragamo", "brand"),
 ]
 
-_PALETTE = ["#B23A6B", "#E8B54D", "#FF7A59", "#7A3B69"]  # rotates per card
-
-def _source_cards():
-    cards = []
-    for i, (name, cat) in enumerate(SOURCES):
-        color = _PALETTE[i % len(_PALETTE)]
-        cat_label = {"magazine": "Magazine", "retailer": "Retailer", "brand": "Brand"}[cat]
-        cards.append(f"""
-        <div class="source-card" data-cat="{cat}" style="background:linear-gradient(135deg,{color}22,{color}0a);border-color:{color}33;">
-          <span class="tag" style="background:{color}20;color:{color};">{cat_label}</span>
-          <h3 class="editorial" style="color:{color};">{name}</h3>
-        </div>""")
-    return "\n".join(cards)
+def _source_rows():
+    rows = []
+    for name, cat in SOURCES:
+        rows.append(f'<div class="source-cell" data-cat="{cat}">{name}</div>')
+    return "\n".join(rows)
 
 
 HERO_HTML = f"""
@@ -58,181 +43,190 @@ HERO_HTML = f"""
 <head>
 <meta charset="UTF-8">
 <style>
-  * {{ box-sizing: border-box; }}
+  * {{ box-sizing: border-box; -webkit-font-smoothing: antialiased; }}
   :root {{
-    --ink: #2E1A22;
-    --primary: #B23A6B;
-    --accent: #FF7A59;
-    --gold: #E8B54D;
-    --blush: #FBE4E8;
-    --cream: #FDF6F0;
+    --ink: #1d1d1f;
+    --gray: #6e6e73;
+    --line: #d2d2d7;
+    --bg-soft: #f5f5f7;
+    --accent: #A23B5C;
   }}
+  html, body {{ margin: 0; padding: 0; }}
   body {{
-    margin: 0; font-family: -apple-system, "DM Sans", "Segoe UI", sans-serif;
-    color: var(--ink); background: var(--cream);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink); background: #fff; letter-spacing: -0.01em;
   }}
-  .editorial {{ font-family: Georgia, "Playfair Display", serif; }}
-  .wrap {{ max-width: 1120px; margin: 0 auto; padding: 0 24px; }}
   a {{ text-decoration: none; color: inherit; }}
+  .wrap {{ max-width: 1100px; margin: 0 auto; padding: 0 24px; }}
 
-  /* ---------- FRONT PAGE ---------- */
-  .front {{
-    position: relative; min-height: 560px; display: flex; align-items: center;
-    justify-content: center; text-align: center; overflow: hidden;
-    background-image: linear-gradient(180deg, rgba(46,26,34,.55), rgba(178,58,107,.55)),
-                       url('{HEADER_PHOTO_URL}');
-    background-size: cover; background-position: center;
+  /* ---------- NAV ---------- */
+  nav.topnav {{
+    position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px);
+    background: rgba(255,255,255,.82); border-bottom: 1px solid var(--line);
   }}
-  .front .inner {{ position: relative; z-index: 2; padding: 40px 24px; }}
-  .site-name {{
-    font-size: 5rem; line-height: 1; color: #fff; margin: 0 0 22px; font-weight: 700;
-    letter-spacing: .01em; text-shadow: 0 4px 30px rgba(0,0,0,.25);
-  }}
-  .front p.desc {{
-    font-size: 1.2rem; color: #fff; max-width: 560px; margin: 0 auto 30px;
-    line-height: 1.65; opacity: .95;
-  }}
-  .front .scroll-cue {{ color: #fff; font-size: .85rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }}
-  .bounce {{ display: inline-block; animation: bounce 1.5s infinite; }}
-  @keyframes bounce {{ 0%,100%{{transform:translateY(0);}} 50%{{transform:translateY(7px);}} }}
+  nav.topnav .row {{ display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; max-width: 1100px; margin: 0 auto; }}
+  .wordmark {{ font-size: 1.05rem; font-weight: 600; }}
+  .navlinks {{ display: flex; gap: 26px; font-size: .82rem; color: var(--gray); }}
+  .navlinks a:hover {{ color: var(--ink); }}
 
-  /* ---------- SECTIONS ---------- */
-  section.block {{ padding: 64px 0; }}
-  .block-head {{ max-width: 640px; margin: 0 auto 36px; text-align: center; }}
-  .tag {{
-    display: inline-block; background: var(--blush); color: var(--primary); border-radius: 999px;
-    padding: 6px 16px; font-size: .75rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .08em; margin-bottom: 16px;
+  /* ---------- HERO ---------- */
+  .hero {{ text-align: center; padding: 88px 24px 0; }}
+  .eyebrow {{ font-size: .95rem; font-weight: 600; color: var(--gray); margin-bottom: 6px; }}
+  h1.headline {{
+    font-size: clamp(2.6rem, 7vw, 5.4rem); font-weight: 700; line-height: 1.04;
+    letter-spacing: -0.02em; margin: 4px 0 12px;
   }}
-  h2.title {{ font-size: 2.3rem; margin: 6px 0 14px; font-weight: 700; }}
-  .block-head p {{ font-size: 1.05rem; line-height: 1.65; }}
+  .hero .sub {{ font-size: clamp(1.1rem, 2vw, 1.4rem); color: var(--gray); margin: 0 auto 26px; max-width: 620px; }}
+  .pill-links {{ display: flex; justify-content: center; gap: 26px; font-size: 1.1rem; margin-bottom: 46px; }}
+  .pill-links a.primary {{ color: var(--accent); font-weight: 600; }}
+  .pill-links a:hover {{ text-decoration: underline; }}
+  .hero-photo {{
+    width: 100%; max-width: 1100px; margin: 0 auto; border-radius: 28px; overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,.12);
+  }}
+  .hero-photo img {{ width: 100%; display: block; height: clamp(280px, 46vw, 620px); object-fit: cover; }}
 
-  .cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 24px; }}
-  .card {{ background: #fff; border: 1px solid #f0e2e7; border-radius: 26px; overflow: hidden; box-shadow: 0 8px 24px rgba(178,58,107,.06); }}
-  .card .img {{ height: 175px; }}
-  .card .body {{ padding: 26px; }}
-  .icon-badge {{
-    display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
-    border-radius: 999px; color: #fff; font-size: 1.2rem; margin-bottom: 16px;
+  /* ---------- FEATURE (alternating full-width) ---------- */
+  section.feature {{ padding: 110px 24px; text-align: center; }}
+  section.feature.dark {{ background: #000; color: #fff; }}
+  section.feature.soft {{ background: var(--bg-soft); }}
+  .feature h2 {{
+    font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; letter-spacing: -0.02em;
+    line-height: 1.08; margin: 0 0 14px;
   }}
-  .card h3 {{ font-size: 1.4rem; margin: 0 0 10px; font-weight: 700; }}
-  .card p {{ margin: 0; line-height: 1.65; font-size: .97rem; }}
+  .feature p.sub {{ font-size: 1.15rem; color: var(--gray); max-width: 560px; margin: 0 auto 44px; }}
+  section.feature.dark p.sub {{ color: #a1a1a6; }}
+  .feature-photo {{
+    max-width: 980px; margin: 0 auto; border-radius: 26px; overflow: hidden;
+  }}
+  .feature-photo img {{ width: 100%; display: block; height: clamp(260px, 40vw, 520px); object-fit: cover; }}
 
-  .quote-card {{ background: linear-gradient(135deg,var(--gold),var(--accent)); color: #fff;
-    display: flex; align-items: flex-end; padding: 26px; min-height: 175px; font-size: 1.45rem;
-    font-weight: 700; line-height: 1.25; }}
+  /* ---------- HIGHLIGHTS GRID ---------- */
+  section.highlights {{ padding: 100px 24px; }}
+  .highlights h2 {{ text-align: center; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -.02em; margin: 0 0 56px; }}
+  .grid3 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }}
+  .tile {{ background: var(--bg-soft); border-radius: 24px; padding: 40px 30px; text-align: left; }}
+  .tile .num {{ font-size: .82rem; font-weight: 700; color: var(--accent); margin-bottom: 18px; letter-spacing: .04em; }}
+  .tile h3 {{ font-size: 1.4rem; font-weight: 700; margin: 0 0 10px; letter-spacing: -.01em; }}
+  .tile p {{ font-size: .98rem; color: var(--gray); line-height: 1.6; margin: 0; }}
 
-  .placeholder {{
-    background: linear-gradient(135deg,var(--blush),#f3cfd8); display: flex; align-items: center;
-    justify-content: center; color: var(--primary); font-size: .85rem; text-align: center; padding: 16px;
+  /* ---------- SOURCES (Apple-style compatibility list) ---------- */
+  section.sources {{ padding: 100px 24px; border-top: 1px solid var(--line); }}
+  .sources .block-head {{ text-align: center; max-width: 620px; margin: 0 auto 40px; }}
+  .sources h2 {{ font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -.02em; margin: 0 0 12px; }}
+  .sources .block-head p {{ color: var(--gray); font-size: 1.05rem; }}
+  .segmented {{ display: flex; justify-content: center; gap: 4px; background: var(--bg-soft); border-radius: 999px;
+    padding: 4px; width: fit-content; margin: 0 auto 44px; }}
+  .segmented button {{
+    border: none; background: transparent; padding: 8px 20px; border-radius: 999px; font-size: .88rem;
+    font-weight: 600; cursor: pointer; color: var(--gray);
   }}
-
-  /* ---------- SOURCES ---------- */
-  .filters {{ display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; }}
-  .filter-btn {{
-    border: 1.5px solid var(--primary); color: var(--primary); background: #fff; border-radius: 999px;
-    padding: 9px 20px; font-weight: 700; font-size: .88rem; cursor: pointer;
+  .segmented button.active {{ background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }}
+  .sources-grid {{ max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); }}
+  .source-cell {{
+    border-top: 1px solid var(--line); padding: 22px 4px; font-size: 1.15rem; font-weight: 600;
+    text-align: center;
   }}
-  .filter-btn.active {{ background: var(--primary); color: #fff; }}
-  .sources-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }}
-  .source-card {{
-    border: 1.5px solid; border-radius: 20px; padding: 22px 18px; text-align: center;
-    transition: transform .2s ease, box-shadow .2s ease;
-  }}
-  .source-card:hover {{ transform: translateY(-4px); box-shadow: 0 10px 26px rgba(46,26,34,.1); }}
-  .source-card h3 {{ font-size: 1.25rem; margin: 4px 0 0; font-weight: 700; }}
 
   /* ---------- CLOSING ---------- */
-  .closing {{
-    background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border-radius: 30px;
-    text-align: center; padding: 64px 30px; margin: 10px auto 0;
+  section.closing {{ padding: 120px 24px; text-align: center; background: var(--bg-soft); }}
+  section.closing h2 {{ font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; letter-spacing: -.02em; margin: 0 0 16px; }}
+  section.closing p {{ color: var(--gray); font-size: 1.1rem; max-width: 480px; margin: 0 auto 34px; }}
+  .btn-pill {{
+    display: inline-block; background: var(--ink); color: #fff; border-radius: 999px;
+    padding: 14px 32px; font-weight: 600; font-size: 1.02rem;
   }}
-  .closing h2 {{ color: #fff; }}
-  .closing p {{ color: rgba(255,255,255,.9); max-width: 500px; margin: 0 auto 26px; font-size: 1.05rem; }}
-  .btn-white {{
-    background: #fff; color: var(--primary); border-radius: 999px; padding: 13px 28px;
-    font-weight: 700; display: inline-block; font-size: 1rem;
-  }}
-  .btn-white:hover {{ opacity: .92; }}
+  .btn-pill:hover {{ background: #000; }}
 
-  .scroll-note {{ text-align: center; padding: 40px 0 56px; }}
-  .scroll-note p {{ font-weight: 700; font-size: 1.05rem; color: var(--primary); }}
+  .scroll-note {{ text-align: center; padding: 40px 0 60px; color: var(--gray); font-size: .95rem; font-weight: 600; }}
+  .bounce {{ display: inline-block; animation: bounce 1.5s infinite; }}
+  @keyframes bounce {{ 0%,100%{{transform:translateY(0);}} 50%{{transform:translateY(6px);}} }}
+
+  footer.foot {{ padding: 40px 24px; border-top: 1px solid var(--line); text-align: center; color: var(--gray); font-size: .82rem; }}
 
   @media (max-width: 640px) {{
-    .site-name {{ font-size: 3rem; }}
-    .front {{ min-height: 440px; }}
-    h2.title {{ font-size: 1.8rem; }}
+    .pill-links {{ flex-direction: column; gap: 12px; }}
+    section.feature, section.highlights, section.sources, section.closing {{ padding-top: 64px; padding-bottom: 64px; }}
   }}
 </style>
 </head>
 <body>
 
-<section class="front" id="top">
-  <div class="inner">
-    <h1 class="site-name editorial">À La Mode</h1>
-    <p class="desc">Your closet, styled. Upload photos of what you already own and get outfit combinations built around current trends and your own taste.</p>
-    <a href="#scroll-target" class="scroll-cue">Scroll to begin <span class="bounce">⬇</span></a>
+<nav class="topnav"><div class="row">
+  <a href="#top" class="wordmark">À La Mode</a>
+  <div class="navlinks">
+    <a href="#closet">How it works</a>
+    <a href="#sources">Sources</a>
+    <a href="#scroll-target">Open the app</a>
+  </div>
+</div></nav>
+
+<section class="hero" id="top">
+  <p class="eyebrow">À La Mode</p>
+  <h1 class="headline">Your closet.<br>Reimagined.</h1>
+  <p class="sub">Upload photos of what you already own. Get outfits built around current trends and your own taste.</p>
+  <div class="pill-links">
+    <a href="#scroll-target" class="primary">Style my closet &nbsp;›</a>
+    <a href="#sources">See what inspires it &nbsp;›</a>
+  </div>
+  <div class="hero-photo"><img src="{PHOTO_RACKS}" alt="Clothing rack"></div>
+</section>
+
+<section class="feature dark" id="closet">
+  <h2>Upload once.<br>Style forever.</h2>
+  <p class="sub">Snap photos of your tops, bottoms, shoes, and bags. We tag the category and read the color automatically — no manual sorting.</p>
+  <div class="feature-photo"><img src="{PHOTO_COAT}" alt="Coat on a minimal rack"></div>
+</section>
+
+<section class="highlights">
+  <h2>Built to actually get worn.</h2>
+  <div class="grid3">
+    <div class="tile"><div class="num">01</div><h3>Color-matched</h3><p>Every combination is checked against real color-harmony rules, so pairings look intentional, not random.</p></div>
+    <div class="tile"><div class="num">02</div><h3>Trend-aware</h3><p>Pulls current headlines from the fashion press, so suggestions reflect what's happening this season.</p></div>
+    <div class="tile"><div class="num">03</div><h3>Fit-aware</h3><p>Add your height and body shape for silhouette tips that are actually about you, not a generic size chart.</p></div>
   </div>
 </section>
 
-<section class="block" id="closet"><div class="wrap">
-  <div class="block-head">
-    <span class="tag">How it works</span>
-    <h2 class="title editorial">Three steps to a styled closet</h2>
-    <p>No spreadsheets, no guesswork — just your actual pieces, organized and paired for you.</p>
-  </div>
-  <div class="cards">
-    <div class="card"><div class="img placeholder" style="border-radius:0;">Closet photo</div>
-      <div class="body"><div class="icon-badge" style="background:var(--primary);">👕</div>
-        <h3 class="editorial">Upload your pieces</h3>
-        <p>Snap photos of tops, bottoms, shoes, and bags. We tag the category and pull the dominant color automatically.</p></div></div>
-    <div class="card"><div class="img placeholder" style="border-radius:0;">Outfit photo</div>
-      <div class="body"><div class="icon-badge" style="background:var(--accent);">✨</div>
-        <h3 class="editorial">Get outfit combinations</h3>
-        <p>We match pieces by color harmony and today's trends, then hand you a shortlist of full outfits.</p></div></div>
-    <div class="card"><div class="quote-card editorial">"I stopped buying clothes I already own."</div>
-      <div class="body"><div class="icon-badge" style="background:var(--gold);">♥</div>
-        <h3 class="editorial">Dress with confidence</h3>
-        <p>Add your height, body shape, and taste for fit tips that actually fit you, not a generic size chart.</p></div></div>
-  </div>
-</div></section>
+<section class="feature soft">
+  <h2>Nothing left folded in a drawer.</h2>
+  <p class="sub">See every piece you own in one place, then let the pairing engine find the combinations you'd never have tried yourself.</p>
+  <div class="feature-photo"><img src="{PHOTO_SWEATERS}" alt="Stack of folded sweaters"></div>
+</section>
 
-<section class="block" id="sources" style="background:#fff;"><div class="wrap">
+<section class="sources" id="sources">
   <div class="block-head">
-    <span class="tag">Where the trends come from</span>
-    <h2 class="title editorial">Our fashion sources</h2>
+    <h2>Our fashion sources.</h2>
     <p>The magazines, retailers, and houses we track for silhouette, color, and trend direction.</p>
   </div>
-  <div class="filters">
-    <button class="filter-btn active" data-filter="all" onclick="filterSources('all', this)">All</button>
-    <button class="filter-btn" data-filter="magazine" onclick="filterSources('magazine', this)">Magazines</button>
-    <button class="filter-btn" data-filter="retailer" onclick="filterSources('retailer', this)">Retailers</button>
-    <button class="filter-btn" data-filter="brand" onclick="filterSources('brand', this)">Brands</button>
+  <div class="segmented">
+    <button class="active" onclick="filterSources('all', this)">All</button>
+    <button onclick="filterSources('magazine', this)">Magazines</button>
+    <button onclick="filterSources('retailer', this)">Retailers</button>
+    <button onclick="filterSources('brand', this)">Brands</button>
   </div>
   <div class="sources-grid" id="sources-grid">
-    {_source_cards()}
+    {_source_rows()}
   </div>
-</div></section>
+</section>
 
-<section class="block"><div class="wrap">
-  <div class="closing">
-    <h2 class="editorial">Your closet is more versatile than you think.</h2>
-    <p>Upload a few photos and see what you can put together in the next five minutes.</p>
-    <a href="#scroll-target" class="btn-white">✨ Try À La Mode free</a>
-  </div>
-</div></section>
+<section class="closing">
+  <h2>Your closet is more<br>versatile than you think.</h2>
+  <p>Upload a few photos and see what you can put together in the next five minutes.</p>
+  <a href="#scroll-target" class="btn-pill">Try À La Mode free</a>
+</section>
 
 <div class="scroll-note" id="scroll-target">
-  <span class="bounce">⬇</span>
-  <p>Your closet tool is right below — keep scrolling on the page.</p>
+  <span class="bounce">⬇</span><br>Your closet tool is right below — keep scrolling on the page.
 </div>
+
+<footer class="foot">À La Mode — built with Streamlit. Not affiliated with the brands or publications listed above.</footer>
 
 <script>
   function filterSources(cat, btn) {{
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.segmented button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('#sources-grid .source-card').forEach(card => {{
-      card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
+    document.querySelectorAll('#sources-grid .source-cell').forEach(cell => {{
+      cell.style.display = (cat === 'all' || cell.dataset.cat === cat) ? '' : 'none';
     }});
   }}
 </script>
