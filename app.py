@@ -29,7 +29,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from PIL import Image
 
-from hero_section import HERO_HTML
+from hero_section import HERO_HTML, SHOWCASE_HTML
 
 try:
     import feedparser
@@ -279,6 +279,11 @@ if "next_id" not in st.session_state:
 # HTML component) followed by the actual working tool below it
 # ----------------------------------------------------------------------
 components.html(HERO_HTML, height=3050, scrolling=False)
+
+# Scroll-scrubbed 3D showcase: a small internally-scrolling panel (see the
+# note in hero_section.py for why this one needs scrolling=True while the
+# banner above doesn't).
+components.html(SHOWCASE_HTML, height=640, scrolling=True)
 
 st.header("👗 Your Closet Tool")
 st.write("Upload photos of your clothes, bags, and shoes, and get outfit combinations built around current trends and your own style.")

@@ -19,6 +19,122 @@ PHOTO_RACKS = "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?fm=j
 PHOTO_COAT = "https://images.unsplash.com/photo-1604882767135-b41fac508fff?fm=jpg&q=80&w=2400&auto=format&fit=crop"
 PHOTO_SWEATERS = "https://images.unsplash.com/photo-1646270968349-dafd9f758e93?fm=jpg&q=80&w=2400&auto=format&fit=crop"
 
+PHOTO_RACKS = "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?fm=jpg&q=80&w=2400&auto=format&fit=crop"
+PHOTO_COAT = "https://images.unsplash.com/photo-1604882767135-b41fac508fff?fm=jpg&q=80&w=2400&auto=format&fit=crop"
+PHOTO_SWEATERS = "https://images.unsplash.com/photo-1646270968349-dafd9f758e93?fm=jpg&q=80&w=2400&auto=format&fit=crop"
+PHOTO_BAG = "https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?fm=jpg&q=80&w=2400&auto=format&fit=crop"
+PHOTO_SHOES = "https://images.unsplash.com/photo-1676379827610-c380c52db0c6?fm=jpg&q=80&w=2400&auto=format&fit=crop"
+# All photos: real, free-to-use Unsplash photography (Unsplash License —
+# free for commercial use, no attribution required). Credits, in order:
+# Thom Bradley, Priscilla Du Preez, Meg MacDonald, Irene Kredenets, Maria Fernanda Pissioli.
+
+SHOWCASE_ITEMS = [
+    (PHOTO_RACKS, "The Rack."),
+    (PHOTO_COAT, "The Coat."),
+    (PHOTO_SWEATERS, "The Knit."),
+    (PHOTO_BAG, "The Bag."),
+    (PHOTO_SHOES, "The Shoe."),
+]
+
+def _showcase_cards():
+    cards = []
+    for i, (url, label) in enumerate(SHOWCASE_ITEMS):
+        cards.append(f'''
+        <div class="sc-card" data-i="{i}">
+          <div class="sc-photo"><img src="{url}" alt="{label}"></div>
+          <p class="sc-label">{label}</p>
+        </div>''')
+    return "\n".join(cards)
+
+def _showcase_dots():
+    return "\n".join(f'<span class="sc-dot" data-i="{i}"></span>' for i in range(len(SHOWCASE_ITEMS)))
+
+
+SHOWCASE_HTML = f"""
+<!doctype html>
+<html><head><meta charset="UTF-8"><style>
+  * {{ box-sizing: border-box; -webkit-font-smoothing: antialiased; }}
+  html, body {{ margin: 0; height: 100%; background: #000; overflow-x: hidden; }}
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", Arial, sans-serif; }}
+
+  #showcase-track {{ position: relative; height: 500vh; }}
+  #showcase-sticky {{
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    perspective: 1600px; background: #000;
+  }}
+  .sc-eyebrow {{
+    position: absolute; top: 26px; left: 0; right: 0; text-align: center;
+    color: #86868b; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  }}
+  .sc-card {{
+    position: absolute; width: min(72vw, 520px); text-align: center;
+    transform-style: preserve-3d; will-change: transform, opacity;
+  }}
+  .sc-photo {{
+    border-radius: 22px; overflow: hidden; box-shadow: 0 40px 90px rgba(0,0,0,.55);
+  }}
+  .sc-photo img {{ width: 100%; height: min(46vh, 380px); object-fit: cover; display: block; }}
+  .sc-label {{
+    color: #fff; font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; margin: 18px 0 0;
+  }}
+  .sc-dots {{
+    position: absolute; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px;
+  }}
+  .sc-dot {{ width: 6px; height: 6px; border-radius: 50%; background: #48484a; transition: background .2s ease, transform .2s ease; }}
+  .sc-dot.active {{ background: #fff; transform: scale(1.4); }}
+</style></head>
+<body>
+  <div id="showcase-track">
+    <div id="showcase-sticky">
+      <p class="sc-eyebrow">The Closet, Up Close</p>
+      {_showcase_cards()}
+      <div class="sc-dots">{_showcase_dots()}</div>
+    </div>
+  </div>
+<script>
+  const track = document.getElementById('showcase-track');
+  const cards = Array.from(document.querySelectorAll('.sc-card'));
+  const dots = Array.from(document.querySelectorAll('.sc-dot'));
+  const STAGES = cards.length;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  function render() {{
+    const rect = track.getBoundingClientRect();
+    const total = rect.height - window.innerHeight;
+    let progress = total > 0 ? (-rect.top) / total : 0;
+    progress = clamp(progress, 0, 1);
+    const stageProgress = progress * (STAGES - 1);
+
+    cards.forEach((card, i) => {{
+      const local = clamp(stageProgress - i, -1.4, 1.4);
+      const rotateY = -55 * clamp(local, -1, 1);
+      const translateX = -60 * clamp(local, -1, 1);
+      const scale = 1 - 0.18 * Math.min(Math.abs(local), 1);
+      const opacity = Math.max(0, 1 - Math.abs(local) * 1.15);
+      card.style.transform = `translateX(${{translateX}}%) rotateY(${{rotateY}}deg) scale(${{scale}})`;
+      card.style.opacity = opacity;
+      card.style.zIndex = 100 - Math.round(Math.abs(local) * 10);
+    }});
+
+    const activeIndex = clamp(Math.round(stageProgress), 0, STAGES - 1);
+    dots.forEach((d, i) => d.classList.toggle('active', i === activeIndex));
+  }}
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {{
+    if (!ticking) {{
+      requestAnimationFrame(() => {{ render(); ticking = false; }});
+      ticking = true;
+    }}
+  }}, {{ passive: true }});
+  window.addEventListener('resize', render);
+  render();
+</script>
+</body></html>
+"""
+
+
 SOURCES = [
     ("Vogue", "magazine"), ("Harper's Bazaar", "magazine"), ("Elle", "magazine"),
     ("L'Officiel", "magazine"), ("Numéro", "magazine"), ("Marie Claire", "magazine"),
